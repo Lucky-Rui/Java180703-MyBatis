@@ -1,4 +1,4 @@
-package com.situ.mybatis.until;
+package com.situ.mybatis.util;
 
 import java.io.IOException;
 import java.io.InputStream;

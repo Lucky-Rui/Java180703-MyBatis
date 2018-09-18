@@ -13,7 +13,7 @@ import com.situ.mybatis.dao.IStudentDao;
 import com.situ.mybatis.entity.Student;
 import com.situ.mybatis.service.IStudentService;
 import com.situ.mybatis.service.impl.StudentServiceImpl;
-import com.situ.mybatis.until.MyBatisUtil;
+import com.situ.mybatis.util.MyBatisUtil;
 import com.situ.mybatis.vo.PageBean;
 import com.situ.mybatis.vo.SearchVO;
 import com.situ.mybatis.vo.StudentSearchCondition;
