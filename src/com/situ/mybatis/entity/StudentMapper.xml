@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<!--namespace可以认为数据库里student表名  -->
+<!-- <mapper namespace="student"> -->
+
+<!-- namespace绑定接口 -->
+<mapper namespace="com.situ.mybatis.dao.IStudentDao">
+	<!-- resultMap最终是要将结果映射到Student上,当实体类的属性名和表的字段名不一致的时候，必须要写这个映射 -->
+	<!-- 查询的返回的属性就要写resultMap="studentMap" -->
+	<resultMap type="Student" id="studentMap">
+		<!-- 映射组件属性： 如果有多个主键字段，就定义多个id -->
+		<!-- property:类的属性名 -->
+   		<!-- column:表的字段名 -->
+		<id property="id" column="id"/>
+   		<!-- result定义普通属性 -->
+		<result property="name" column="student_name"/>
+		<result property="age" column="age"/>
+		<result property="gender" column="genser"/>
+	</resultMap>
+
+
+	<!-- Sql中可以将重复代码提取出来，使用include引用，达到sql重用的目的 -->
+	<sql id="studentColums">
+		id,name,age,gender,banji_id
+	</sql>
+
+	<!-- id:就是方法名、parameterType:参数的类型、resultType:返回的类型(更新类没有这个属性) -->
+	<!-- 
+	<select id="findById" parameterType="java.lang.Integer" resultType="com.situ.mybatis.entity.Student">
+		select * from  student where id=#{id}
+	</select> 
+	-->
+	
+	<!-- 查询类  -->
+	<select id="findById" parameterType="integer" resultType="Student">
+		select * from  student where id=#{id}
+	</select>
+	<select id="list" resultType="Student">
+		select id,name,age,gender from student
+	</select>
+	<select id="findByName" parameterType="string" resultType="Student">
+		select * from student where name like '%${value}%'
+	</select>
+	
+	<!-- 更新类 -->
+	<update id="updateStudent" parameterType="Student">
+		update student set name =#{name} , age =#{age} ,gender =#{gender} ,banji_id=#{banjiId} where id=#{id}
+	</update>
+	<insert id="insert" parameterType="Student">
+		insert into student(name,age,gender) values(#{name},#{age},#{gender})
+	</insert>
+	<delete id="deleteById" parameterType="integer">
+		delete from student where id=#{id}
+	</delete>
+	
+	<!-- 根据SearchVO中的Student名字模糊查找 -->
+	<select id="findBySearchVO" parameterType="SearchVO" resultType="Student">
+	   select <include refid="studentColums"/>
+	   from student
+	   where name like '%${student.name}%'
+	</select>
+	
+	<!-- 输入映射中的传递Map -->
+	<select id="findByPage" parameterType="map" resultType="Student">
+	   select <include refid="studentColums"/>
+	   from student
+	   limit #{offset},#{pageSize}
+	</select>
+	
+	<!-- 动态拼接sql -->
+	<!-- where标签 -->
+	<select id="findByCondition" parameterType="SearchVO" resultType="Student">
+		select <include refid="studentColums"/>
+		from student
+		<!-- where标签可以自动添加where，同时去掉sql语句中的第一个and -->
+		<where>
+			<if test=" name != null and name != '' ">
+				and name like '%${name}%'
+			</if>
+			<if test="age != null">
+				and age=#{age}
+			</if>
+			<if test="gender != null and gender != '' ">
+				and gender=#{gender}
+			</if>
+		</where>
+	</select>
+	
+	<!-- 动态更新 -->
+	<!-- set标签 -->
+	<update id="updateStudaent" parameterType="Student">
+		<!-- update student set name=?, age=?,gender=? where id=? -->
+		update student
+		<set>
+			<if test=" name != null and name != '' ">
+			<!-- 不能忘了写","号 -->
+				name=#{name},
+			</if>
+			<if test="age != null">
+				age=#{age},
+			</if>
+			<if test="gender != null and gender != '' ">
+				gender=#{gender}
+			</if>
+		</set>
+		where id=#{id}
+	</update>
+	
+	<!-- foreach标签,数组 -->
+	<select id="findByIdArray" resultType="Student">
+		<!-- select * from student where id in(1,2,3,4); -->
+		select <include refid="studentColums"/>
+	   	from student
+	   	<where>
+	   		id in 
+	   		<foreach collection="array" item="id" open="(" close=")" separator=",">
+	   			#{id}
+	   		</foreach>
+	   	</where>
+	</select>
+	<!-- foreach标签,集合 -->
+	<select id="findByIdList" resultMap="studentMap">
+	   <!-- select * from student where id in(1,2,3,4); -->
+	   select <include refid="studentColums"/>
+	   from student
+	   <where>
+	     id in
+	     <foreach collection="list" item="id" open="(" close=")" separator=",">
+	        #{id}
+	     </foreach>
+	   </where>
+	</select>
+	
+	<!-- 优先级查找 -->
+	<select id="findByConditionChoose" parameterType="SearchVO" resultType="Student">
+		select <include refid="studentColums"/>
+	   	from student
+	   	<where>
+		   	<choose>
+		   		<when test="name != null and name != '' ">
+		   			name like '%${name}%'
+		   		</when>
+		   		<when test="age != null ">
+		   			age=#{age}
+		   		</when>
+		   		<when test="gender != null and gender != '' ">
+		   			gender = #{gender}
+		   		</when>
+		   	</choose>
+	   	</where>
+	</select>
+	
+	<!-- 多条件搜索+分页 -->
+	<!-- 获得符合condition条件的总记录数 -->
+	<select id="getTotalCount" parameterType="StudentSearchCondition" resultType="integer">
+	   select count(id)
+	   from student
+	   <where>
+	     <if test="name != null and name != '' ">
+	        and name like '%${name}%'
+	     </if>
+	     <if test="age != null">
+	        and age=#{age}
+	     </if>
+	     <if test="gender != null and gender != '' ">
+	        and gender=#{gender}
+	     </if>
+	   </where>
+	</select>
+	<!-- 得到当前页数据 -->
+	<select id="findPageBeanListByCondition" resultMap="studentMap">
+	   select <include refid="studentColums"/>
+	   from student
+	   <where>
+	     <if test="studentSearchCondition.name != null and studentSearchCondition.name != '' ">
+	        and name like '%${studentSearchCondition.name}%'
+	     </if>
+	     <if test="studentSearchCondition.age != null">
+	        and age=#{studentSearchCondition.age}
+	     </if>
+	     <if test="studentSearchCondition.gender != null and studentSearchCondition.gender != '' ">
+	        and gender=#{studentSearchCondition.gender}
+	     </if>
+	   </where>
+	   limit #{offset},#{studentSearchCondition.pageSize}
+	</select>
+	
+	
+</mapper>
+  
